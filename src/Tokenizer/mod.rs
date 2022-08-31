@@ -10,7 +10,10 @@ pub enum TokenTypes {
     ASSIGN,
     LINEBREAK,
     OP,
-    WHITESPACE
+    WHITESPACE,
+    LPAREN,
+    RPAREN,
+    COMMA
 }
 
 #[derive(Debug, Clone)]
@@ -74,6 +77,18 @@ impl Tokenizer {
         self.get_current() == '\n'
     }
 
+    fn is_lparen(&self) -> bool {
+        self.get_current() == '('
+    }
+
+    fn is_rparen(&self) -> bool {
+        self.get_current() == ')'
+    }
+
+    fn is_comma(&self) -> bool {
+        self.get_current() == ','
+    }
+
     fn check_type(&self) -> TokenTypes {
         if self.is_number() {TokenTypes::NUMBER}
         else if self.is_assign() {TokenTypes::ASSIGN}
@@ -81,6 +96,9 @@ impl Tokenizer {
         else if self.is_linebreak() {TokenTypes::LINEBREAK}
         else if self.is_string() {TokenTypes::STRING}
         else if self.is_whitespace() {TokenTypes::WHITESPACE}
+        else if self.is_lparen() {TokenTypes::LPAREN}
+        else if self.is_rparen() {TokenTypes::RPAREN}
+        else if self.is_comma() {TokenTypes::COMMA}
         else {panic!("Unknown Token could not get token type at {}", self.index)}   
     }
     

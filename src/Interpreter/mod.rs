@@ -1,6 +1,14 @@
 use core::panic;
 use std::collections::HashMap;
 use crate::Parser::{Ast::AstNode, Parser, Ast::AstTypes};
+mod BuildInFuncs;
+
+/*
+pub enum ReturnTypes {
+    STRING(String),
+    INT(i32)
+}
+*/
 // TODO: replace i32 with return types
 pub struct Interpreter {
     line_map: HashMap<String, AstNode>,
@@ -10,7 +18,7 @@ pub struct Interpreter {
     memory: HashMap<String, i32>
 }
 /*
-TODO: Add memeory
+
 TODO: Add return type enum for primitives
 */
 impl Interpreter {
@@ -30,11 +38,21 @@ impl Interpreter {
     pub fn eval(&mut self, node: &AstNode) -> Option<i32> {
         match node.ast_type {
             AstTypes::OP => Some(self.eval_bin_op(node)), // eval bin node here
-            AstTypes::NUMBER => Some(node.value.parse().unwrap()),
             AstTypes::ASSIGN => Some(self.eval_assign(node)),
+            AstTypes::FUNC => self.eval_func(node),
+            AstTypes::NUMBER => Some(node.value.parse().unwrap()),
             AstTypes::IDENT => Some(self.get_variable(&node.value)),
             _ => None
         }
+    }
+
+    fn eval_func(&mut self, node: &AstNode) -> Option<i32> {
+        let eval = self.eval(&*node.args[0]);
+        match &node.value[..] {
+            "PRINT" => BuildInFuncs::PRINT(eval.unwrap().to_string()),
+            _ => println!("Error: Function definition not found for {}", &node.value)
+        }
+        None
     }
     
     fn eval_bin_op(&mut self, node: &AstNode) -> i32 {

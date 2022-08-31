@@ -30,6 +30,9 @@ impl Parser {
         if let Some(i) = self.parse_term() {
             return i;
         }
+        if let Some(i) = self.parse_func() {
+            return i;
+        }
         if let Some(i) = self.parse_number() {
             return i;
         }
@@ -94,8 +97,24 @@ impl Parser {
     }
 
     fn eat_whitespace(&mut self) -> bool {
+        self.eat(TokenTypes::WHITESPACE)
+    }
+
+    fn eat_paren_start(&mut self) -> bool {
+        self.eat(TokenTypes::LPAREN)
+    }
+
+    fn eat_paren_end(&mut self) -> bool { // Maybe generalize
+        self.eat(TokenTypes::RPAREN)
+    }
+
+    fn eat_comma(&mut self) -> bool {
+        self.eat(TokenTypes::COMMA)
+    }
+
+    fn eat(&mut self, token_type: TokenTypes) -> bool{
         self.index += 1;
-        if self.get_current().token_type == TokenTypes::WHITESPACE {
+        if self.get_current().token_type == token_type {
             self.index += 1;
             return true;
         }
@@ -109,7 +128,7 @@ impl Parser {
         }
     }
 
-    fn parse_ident(&mut self) -> Option<AstNode> {
+    fn parse_ident(&self) -> Option<AstNode> {
         if self.get_current().token_type == TokenTypes::STRING {
             return Some(AstNode::new(self.get_current().value, AstTypes::IDENT));
         }
@@ -158,7 +177,7 @@ impl Parser {
         if let Some(i)= self.parse_op() {
             op = Some(i);
         }
-        else {panic!("Parse Error: Found binary operator when not expected at {}", self.index);}
+        else {self.index -= 1;return None;}
         self.index += 1;
         if self.eos() {return None;};
 
@@ -211,10 +230,42 @@ impl Parser {
         Some(node)
     }
 
-    /*
+    
     fn parse_func(&mut self) -> Option<AstNode> { // Args As arrayand make right
-        let mut left: Option<AstNode> = None;
-        let mut right: Option<AstNode> 
+        let mut name: String = String::new();
+        let mut args: Vec<Box<AstNode>> = Vec::new();
+        if let Some(i) = self.parse_ident() {
+            name = i.value.to_string();
+        } else {return None};
+        if !self.eat_paren_start() {
+            self.index -= 1;
+            return None;
+        }
+        self.index -= 1;
+
+        loop {
+            if self.eat_paren_end() {
+                break;
+            }
+            let arg = self.parse_arg();
+            if let Some(i) = arg {
+                args.push(Box::new(i));
+            } else {
+                break;
+            }
+            if !self.eat_comma() {
+                self.index -= 1; // Dont know if this is right
+                break;
+                // maybe error
+            }
+            self.index -= 1;
+        }
+        let mut node = AstNode::new(name, AstTypes::FUNC);
+        node.set_args(args);
+        Some(node)
     }
-    */
+
+    fn parse_arg(&mut self) -> Option<AstNode> {
+        Some(self.parse_curr())
+    }
 }
